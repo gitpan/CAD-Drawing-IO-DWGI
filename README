@@ -70,6 +70,7 @@ Accuracy
 Changes
       0.08 First public release
       0.09 Fixed error reading image size
+      0.10 Added Ellipse read
 
 Constructor
   new
@@ -110,89 +111,164 @@ Layer Actions
     Add a new layer to the database and set it as the current layer. A
     newfile() starts with layer "0" as the default.
 
+      %layer_opt = (
+        name => $name,  # limit of 255 characters?
+        color => 9,     # must be 0-256
+        );
+      $dwg->writeLayer(\%layer_opt)
+
+    Currently, the only parameter supported is the name and color.
+
   setLayer
 
     Set layer as the default. Layer must have been previously created with
     writeLayer().
 
+      $dwg->setLayer($name) or die "layer not in drawing yet";
+
 Typed Entity Functions
+    NOTE that all getThing methods must be part of a getent() loop.
+
   getCircle
 
-    Reads a circle from the current entity. NOTE that all getThing methods
-    must be part of a getent() loop.
+    Reads a circle from the current entity.
 
-    $circle = $d->getCircle(); print "point: ", join(",", @{$circle->{pt}}),
-    "\n"; print "rad: $circle->{rad}\n";
+      $circle = $d->getCircle();
+      print "point:  ", join(",", @{$circle->{pt}}), "\n";
+      print "rad:    $circle->{rad}\n";
 
   writeCircle
 
     Writes a circle to the object structure.
 
-    $d->writeCircle({"pt"=>[$x,$y,$z], "rad"=>$rad, "color"=>$color});
+      $d->writeCircle({"pt"=>[$x,$y,$z], "rad"=>$rad, "color"=>$color});
+
+  getEllipse
+
+    Reads an ellipse from the current entity.
+
+      $el = $d->getEllipse();
+      print "center:  ", join(",", @{$el->{pt}}), "\n";
+      print "offset:  ", join(",", @{$el->{off}}), "\n";
+      print "minor / major ratio:   $el->{ratio}\n";
+      print "start / end:  ", join(",", @{$el->{angs}}), "\n";
+
+    There is (as usual) some discrepency between the odwg docs and the adesk
+    dxf ref as to wtf this parameter thing is. There are some undocumented
+    functions in the toolkit, which seem to only reduce the arc-angles. NOTE
+    that the angles given are relative to the baseline described by the
+    vector stored in $el->{off}.
 
   getArc
 
     Reads an arc from the current entity.
 
-    $arc = $d->getArc(); print "point: ", join(",", @{$arc->{pt}}), "\n";
-    print "rad: $arc->{rad}\n"; print "radian angles: ", join(",",
-    @{$arc->{angs}}), "\n";
+      $arc = $d->getArc();
+      print "point:  ", join(",", @{$arc->{pt}}), "\n";
+      print "rad:    $arc->{rad}\n";
+      print "radian angles: ", join(",", @{$arc->{angs}}), "\n";
 
   writeArc
 
     Writes an arc to the object structure.
 
-    %ArcOpts = ( "pt" => [$x,$y,$z], "rad" => $rad, "angs" => [$start,
-    $end], "color" => $color, ); $d->writeArc(\%ArcOpts);
+      %ArcOpts = (
+        "pt" => [$x,$y,$z],
+        "rad" => $rad,
+        "angs" => [$start, $end],
+        "color" => $color,
+        );
+      $d->writeArc(\%ArcOpts);
 
   getLine
 
     Reads a line from the current entity.
 
-    $line = $d->getLine(); print "endpoints: ", join("\n", map({join(",",
-    @{$_})} @{$line->{pts}} ) ), "\n";
+      $line = $d->getLine();
+      print "endpoints:  ",
+        join("\n", 
+          map({join(",", @{$_})}
+            @{$line->{pts}}
+          )
+        ), "\n";
 
   writeLine
 
     Writes a line to the object structure.
 
-    %LineOpts = ( "pts" => [ [$x1,$y1,$z1], [$x2,$y2,$z2] ], "color" =>
-    $color, ); $d->writeLine(\%LineOpts);
+      %LineOpts = (
+        "pts" => [ [$x1,$y1,$z1], [$x2,$y2,$z2] ],
+        "color" => $color,
+        );
+      $d->writeLine(\%LineOpts);
 
   getText
 
-    $text = $d->getText(); print "point: ", join(",", @{$text->{pt}}), "\n";
-    print "string: ", $text->{string}, "\n"; print "height: ",
-    $text->{height}, "\n";
+      $text = $d->getText();
+      print "point:  ", join(",", @{$text->{pt}}), "\n";
+      print "string: ", $text->{string}, "\n";
+      print "height: ", $text->{height}, "\n";
 
   writeText
 
-    %TextOpts = ( "pt" => [$x, $y, $z], "string" => $string, "height" =>
-    $height, "color" => $color, ); $d->writeText(\%TextOpts);
+      %TextOpts = (
+        "pt" => [$x, $y, $z],
+        "string" => $string,
+        "height" => $height,
+        "color" => $color,
+        );
+      $d->writeText(\%TextOpts);
+
+  getSolid
 
   getPoint
 
-    $point = $d->getPoint(); print "point: ", join(",", @{$point->{pt}}),
-    "\n";
+      $point = $d->getPoint();
+      print "point:  ", join(",", @{$point->{pt}}), "\n";
 
   writePoint
 
-    %PointOpts = ( "pt" => [$x, $y, $z], "color" => $color, );
-    $d->writePoint(\%PointOpts);
+      %PointOpts = (
+        "pt" => [$x, $y, $z],
+        "color" => $color,
+        );
+      $d->writePoint(\%PointOpts);
 
   getLWPline
 
-    $pline = $d->getLWPline(); print "points:\n\t", join("\n\t",
-    map({join(",", @{$_})} @{$pline->{pts}} ) ), "\n"; $pline->{closed} &&
-    print "closed\n";
+      $pline = $d->getLWPline();
+      print "points:\n\t", 
+        join("\n\t", 
+            map({join(",", @{$_})}
+              @{$pline->{pts}}
+               )
+          ), "\n";
+      print $pline->{closed} ? "closed" : "open" , "\n";
 
   writeLWPline
 
-    @pts = ( [0,1], [5,-2.25], [7,9], [4,6], [-2,7.375], ); %PlineOpts = (
-    "pts" => \@pts, "closed" => 1, "color" => 255, );
-    $d->writeLWPline(\%PlineOpts);
+      @pts = (
+        [0,1],
+        [5,-2.25],
+        [7,9],
+        [4,6],
+        [-2,7.375],
+         );
+      %PlineOpts = (
+        "pts" => \@pts,
+        "closed" => 1,
+        "color" => 255,
+        );
+      $d->writeLWPline(\%PlineOpts);
+
+  getImage
+
+    Reads an image from the current entity.
 
 Entity List handling
+    Entities are read and written from a list, which must be initialized on
+    both read and write operations.
+
   getentinit
 
     Initializes the entity list. Call this before adding anything to a
@@ -201,19 +277,23 @@ Entity List handling
   getent
 
     Returns the next entity. This is paired with getentinit() and the two
-    act as a pair much like Perl's open() and $line = <FILEHANDLE> setup.
+    act as a pair much like the Perl open() and $line = <FILEHANDLE> setup.
 
 Utilities
   get_extrusion
 
     Returns the extrusion vector of the current entity as an array
-    reference.
+    reference. Returns undef if extrusion is not set.
+
+      if(my $extrusion = $dwg->get_extrusion()) {
+        print "extrusion is @$extrusion\n";
+      }
 
   set_extrusion
 
     Sets the extrusion direction of the current entity. Not intended to be
     used from Perl (each write<entity> function calls this itself if the
-    value of $optsextrusion is set.)
+    value of $opts{extrusion} is set.)
 
   entype
 
@@ -229,4 +309,11 @@ Utilities
     This function is called under the hood by perl when variables created by
     new() go out of scope. You should never call this from your code, but
     you can undef() your object and it will get called.
+
+    Note that you may in fact need to undef($dwg) to kill your object before
+    trying to use another one. The toolkit doesn't like to be opened and
+    closed while objects are in-use, and each object has no way of knowing
+    whether or not there are other objects in-use. Since I don't feel like
+    leaking memory with a BEGIN and END setup, you'll just have to live with
+    this (or make a suggestion for a better setup.)
 

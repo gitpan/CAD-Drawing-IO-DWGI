@@ -1,5 +1,5 @@
 package CAD::Drawing::IO::DWGI;
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use 5.006;
 use strict;
@@ -9,7 +9,6 @@ BEGIN {
 	my $dir = __FILE__;
 	$dir =~ s#.pm$#/#;
 	our $functions = $dir . "functions.c";
-	our $include = $dir . "include/";
 	# print "functions at begin: $functions\n";
 }
 
@@ -19,7 +18,7 @@ use Inline (
 		MYEXTLIB => '/usr/local/lib/ad2.a /usr/local/lib/ad2pic.a',
 		NAME => "CAD::Drawing::IO::DWGI",
 		FILTERS => 'Strip_POD',
-		VERSION => '0.09',
+		VERSION => '0.10',
 		# CLEAN_AFTER_BUILD => 0,
 #        FORCE_BUILD => 1,
 		# NOTE:  you can just call this with -MInline=NOISY,NOCLEAN,etc
@@ -118,6 +117,7 @@ in C, so you are more than welcome to submit a patch.
 
   0.08 First public release
   0.09 Fixed error reading image size
+  0.10 Added Ellipse read
 
 =cut
 

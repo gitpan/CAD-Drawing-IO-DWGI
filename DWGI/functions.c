@@ -1,4 +1,4 @@
-// function.c 
+// functions.c 
 
 // This file is part of the CAD::Drawing::IO::DWGI package Copyright
 // 2003 Eric Wilhelm and A. Zahner Co.  This Perl module is free
@@ -51,7 +51,7 @@ typedef struct {
 	short        version;
 } DWGstruct;
 
-const char initfilepath[]="/usr/lib/perl5/site_perl/5.6.1/Zahner/openDWG/adinit/adinit.dat";
+const char initfilepath[]="/usr/local/zahner/openDWG/adinit/adinit.dat";
 short initerror;
 
 short criterrhandler(short num);
@@ -61,13 +61,9 @@ void hello() {
 	printf("hello world\n");
 	}
 
-/*-------------------------CONSTRUCTOR--------------------------------*/
-
 =head1 Constructor
 
 =cut
-
-/*--------------------------------------------------------------------*/
 
 =head2 new
 
@@ -99,8 +95,6 @@ SV*	new (char* class) {
 
 =cut
 
-/*-------------------------LOAD FILE----------------------------------*/
-
 // note that we can have inlined POD as long as everything has a blank
 // line after it.  This is slightly off of the std Perl syntax, but okay
 // anyway that is what we get.
@@ -122,12 +116,10 @@ int loadfile(SV* obj, char* infile) {
 		//printf("loaded okay\n");
 		dwg->file_is_open = 1;
 		return(1);
-		}
+	}
 	croak("loading failed miserably\n");
 	return(0);
-	}
-/*-------------------------New File-----------------------------------*/
-
+} // loadfile
 
 int closefile(SV* obj) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
@@ -136,9 +128,7 @@ int closefile(SV* obj) {
 		dwg->file_is_open = 0;
 		//printf("closing\n");
 	}
-}
-
-/*-------------------------New File-----------------------------------*/
+} // closefile
 
 =head2 newfile
 
@@ -161,8 +151,7 @@ int newfile(SV* obj, short version) {
 	adHancpy(dwg->default_ltype, templtp.objhandle);
 	dwg->version = version;
 	dwg->file_is_open = 1;
-	}
-/*-------------------------Save File----------------------------------*/
+} // newfile
 
 =head2 savefile
 
@@ -184,10 +173,10 @@ short savefile(SV* obj, char* filename, short filetype) {
 		dxfdecprec = 14;
 		dxfwritezeroes = 1;
 		r12dxfvbls= 1; // not writing R11 DXF
-		}
+	}
 	adSaveFile (dwg->handle, filename, (char) filetype, dwg->version, 
 					dxfnegz, dxfdecprec, dxfwritezeroes, r12dxfvbls);
-	}
+} // savefile
 
 =head1 Layer Actions
 
@@ -232,6 +221,14 @@ void listlayers(SV* obj) {
 Add a new layer to the database and set it as the current layer.  A
 newfile() starts with layer "0" as the default.
 
+  %layer_opt = (
+    name => $name,  # limit of 255 characters?
+    color => 9,     # must be 0-256
+    );
+  $dwg->writeLayer(\%layer_opt)
+
+Currently, the only parameter supported is the name and color.
+
 =cut
 
 int writeLayer(SV* obj, SV* args) {
@@ -253,20 +250,20 @@ int writeLayer(SV* obj, SV* args) {
 		val = *psv;
 		len = SvLEN(val);
 		name = SvPV(val, len);
-		}
+	}
 	else {
 		croak("layer name is required");
-		}
+	}
 	adSetDefaultLayer(dwg->handle, &dwg->adtb->lay);
 	strcpy(dwg->adtb->lay.name, name);
 	if(hv_exists(hash, "color", 5)) {
 		psv = hv_fetch(hash, "color",  5, 0);
 		val = *psv;
 		color = SvIV(val);
-		}
+	}
 	else {
 		color = AD_COLOR_WHITE;
-		}
+	}
 	dwg->adtb->lay.color = color;
 	// need to add support  for more linetypes later
 	adHancpy(dwg->adtb->lay.linetypeobjhandle, dwg->default_ltype);
@@ -274,13 +271,14 @@ int writeLayer(SV* obj, SV* args) {
 	// set the current layer handle to this layer
 	adHancpy(dwg->current_layer, dwg->adtb->lay.objhandle);
 	adAddLayer(dwg->handle,&dwg->adtb->lay);
-	}
-/*--------------------------------------------------------------------*/
+} // writeLayer
 
 =head2 setLayer
 
 Set layer as the default.  Layer must have been previously created with
 writeLayer().
+
+  $dwg->setLayer($name) or die "layer not in drawing yet";
 
 =cut
 
@@ -293,18 +291,18 @@ int setLayer(SV * obj, char * name) {
 
 =head1 Typed Entity Functions
 
+NOTE that all getThing methods must be part of a getent() loop.
+
 =cut
 
-/*-------------------------getCircle----------------------------------*/
 
 =head2 getCircle
 
-Reads a circle from the current entity.  NOTE that all getThing methods
-must be part of a getent() loop.
+Reads a circle from the current entity.  
 
-$circle = $d->getCircle();
-print "point:  ", join(",", @{$circle->{pt}}), "\n";
-print "rad:    $circle->{rad}\n";
+  $circle = $d->getCircle();
+  print "point:  ", join(",", @{$circle->{pt}}), "\n";
+  print "rad:    $circle->{rad}\n";
 
 =cut
 
@@ -320,13 +318,12 @@ SV* getCircle(SV* obj) {
 	hv_store(hash, "rad", 3, newSVnv(dwg->aden->circle.radius), 0);
 	return(newRV_noinc((SV*) hash));
 }
-/*--------------------------------------------------------------------*/
 
 =head2 writeCircle
 
 Writes a circle to the object structure.
 
-$d->writeCircle({"pt"=>[$x,$y,$z], "rad"=>$rad, "color"=>$color});
+  $d->writeCircle({"pt"=>[$x,$y,$z], "rad"=>$rad, "color"=>$color});
 
 =cut
 
@@ -399,18 +396,66 @@ int writeCircle(SV* obj, SV* args) {
 	adHancpy(dwg->adenhd->entlayerobjhandle, dwg->current_layer);
 	//printf("copy ok\n");
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
-}
+} // writeCircle
 
-/*-------------------------getArc-------------------------------------*/
+=head2 getEllipse
+
+Reads an ellipse from the current entity.
+
+  $el = $d->getEllipse();
+  print "center:  ", join(",", @{$el->{pt}}), "\n";
+  print "offset:  ", join(",", @{$el->{off}}), "\n";
+  print "minor / major ratio:   $el->{ratio}\n";
+  print "start / end:  ", join(",", @{$el->{angs}}), "\n";
+
+There is (as usual) some discrepency between the odwg docs and the adesk
+dxf ref as to wtf this parameter thing is.  There are some undocumented
+functions in the toolkit, which seem to only reduce the arc-angles.
+NOTE that the angles given are relative to the baseline described by the
+vector stored in $el->{off}.
+
+=cut
+
+SV* getEllipse(SV* obj) {
+	AV * pt;
+	AV * off;
+	AV * angs;
+	double ang;
+	HV * hash = newHV();
+	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
+	hv_store(hash, "pt", 2, newRV_noinc((SV*)pt = newAV()), 0);
+	av_push(pt, newSVnv(dwg->aden->ellipse.pt0[0]));
+	av_push(pt, newSVnv(dwg->aden->ellipse.pt0[1]));
+	av_push(pt, newSVnv(dwg->aden->ellipse.pt0[2]));
+	hv_store(hash, "off", 3, newRV_noinc((SV*)off = newAV()), 0);
+	av_push(off, newSVnv(dwg->aden->ellipse.pt1offset[0]));
+	av_push(off, newSVnv(dwg->aden->ellipse.pt1offset[1]));
+	av_push(off, newSVnv(dwg->aden->ellipse.pt1offset[2]));
+/*    ang = adEllipseAngleFromParameter(*/
+/*            dwg->aden->ellipse.startparam, */
+/*            dwg->aden->ellipse.minortomajorratio*/
+/*            );*/
+/*    printf("start ang is %0.4f\n", ang);*/
+/*    ang = adEllipseAngleFromParameter(*/
+/*            dwg->aden->ellipse.endparam, */
+/*            dwg->aden->ellipse.minortomajorratio*/
+/*            );*/
+/*    printf("end ang is %0.4f\n", ang);*/
+	hv_store(hash, "ratio", 5, newSVnv(dwg->aden->ellipse.minortomajorratio), 0);
+	hv_store(hash, "angs", 4, newRV_noinc((SV*)angs = newAV()), 0);
+	av_push(angs, newSVnv(dwg->aden->ellipse.startparam));
+	av_push(angs, newSVnv(dwg->aden->ellipse.endparam));
+	return(newRV_noinc((SV*) hash));
+} // getEllipse
 
 =head2 getArc
 
 Reads an arc from the current entity.
 
-$arc = $d->getArc();
-print "point:  ", join(",", @{$arc->{pt}}), "\n";
-print "rad:    $arc->{rad}\n";
-print "radian angles: ", join(",", @{$arc->{angs}}), "\n";
+  $arc = $d->getArc();
+  print "point:  ", join(",", @{$arc->{pt}}), "\n";
+  print "rad:    $arc->{rad}\n";
+  print "radian angles: ", join(",", @{$arc->{angs}}), "\n";
 
 =cut
 
@@ -428,20 +473,19 @@ SV* getArc(SV* obj) {
 	av_push(angs, newSVnv(dwg->aden->arc.stang));
 	av_push(angs, newSVnv(dwg->aden->arc.endang));
 	return(newRV_noinc((SV*) hash));
-}
-/*--------------------------------------------------------------------*/
+} // getArc
 
 =head2 writeArc
 
 Writes an arc to the object structure.
 
-%ArcOpts = ( 
-		"pt" => [$x,$y,$z],
-		"rad" => $rad,
-		"angs" => [$start, $end],
-		"color" => $color,
-		);
-$d->writeArc(\%ArcOpts);
+  %ArcOpts = (
+    "pt" => [$x,$y,$z],
+    "rad" => $rad,
+    "angs" => [$start, $end],
+    "color" => $color,
+    );
+  $d->writeArc(\%ArcOpts);
 
 =cut
 
@@ -519,54 +563,50 @@ int writeArc(SV* obj, SV* args) {
 
 	adHancpy(dwg->adenhd->entlayerobjhandle, dwg->current_layer);
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
-}
-
-
-/*-------------------------getLine------------------------------------*/
+} // writeArc
 
 =head2 getLine
 
 Reads a line from the current entity.
 
-$line = $d->getLine();
-print "endpoints:  ", 
-	join("\n", 
-			map({join(",", @{$_})}
-				@{$line->{pts}}
-			   )
-		), "\n";
+  $line = $d->getLine();
+  print "endpoints:  ",
+    join("\n", 
+      map({join(",", @{$_})}
+        @{$line->{pts}}
+      )
+    ), "\n";
 
 =cut
 
-	SV* getLine(SV* obj) {
-		int i;
-		AV * pts;
-		AV * pt0;
-		AV * pt1;
-		HV * hash = newHV();
-		DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
-		hv_store(hash, "pts", 3, newRV_noinc((SV*)pts = newAV()), 0);
-		av_push(pts, newRV_noinc((SV*)pt0 = newAV()));
-		av_push(pts, newRV_noinc((SV*)pt1 = newAV()));
-		for(i=0;i<3;i++) {
-			av_push(pt0, newSVnv(dwg->aden->line.pt0[i]));
-		}
-		for(i=0;i<3;i++) {
-			av_push(pt1, newSVnv(dwg->aden->line.pt1[i]));
-		}
-		return(newRV_noinc((SV*) hash));
+SV* getLine(SV* obj) {
+	int i;
+	AV * pts;
+	AV * pt0;
+	AV * pt1;
+	HV * hash = newHV();
+	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
+	hv_store(hash, "pts", 3, newRV_noinc((SV*)pts = newAV()), 0);
+	av_push(pts, newRV_noinc((SV*)pt0 = newAV()));
+	av_push(pts, newRV_noinc((SV*)pt1 = newAV()));
+	for(i=0;i<3;i++) {
+		av_push(pt0, newSVnv(dwg->aden->line.pt0[i]));
 	}
-/*--------------------------------------------------------------------*/
+	for(i=0;i<3;i++) {
+		av_push(pt1, newSVnv(dwg->aden->line.pt1[i]));
+	}
+	return(newRV_noinc((SV*) hash));
+} // getLine
 
 =head2 writeLine
 
 Writes a line to the object structure.
 
-%LineOpts = (
-		"pts" => [ [$x1,$y1,$z1], [$x2,$y2,$z2] ],
-		"color" => $color,
-		);
-$d->writeLine(\%LineOpts);
+  %LineOpts = (
+    "pts" => [ [$x1,$y1,$z1], [$x2,$y2,$z2] ],
+    "color" => $color,
+    );
+  $d->writeLine(\%LineOpts);
 
 =cut
 
@@ -635,15 +675,14 @@ int writeLine(SV* obj, SV* args) {
 
 	adHancpy(dwg->adenhd->entlayerobjhandle, dwg->current_layer);
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
-}
-/*-------------------------getText------------------------------------*/
+} // writeLine
 
 =head2 getText
 
-$text = $d->getText();
-print "point:  ", join(",", @{$text->{pt}}), "\n";
-print "string: ", $text->{string}, "\n";
-print "height: ", $text->{height}, "\n";
+  $text = $d->getText();
+  print "point:  ", join(",", @{$text->{pt}}), "\n";
+  print "string: ", $text->{string}, "\n";
+  print "height: ", $text->{height}, "\n";
 
 =cut
 
@@ -662,18 +701,17 @@ SV* getText(SV* obj) {
 	// now for the long-awaited text height!
 	hv_store(hash, "height", 6, newSVnv(dwg->aden->text.tdata.height), 0);
 	return(newRV_noinc((SV*) hash));
-}
-/*--------------------------------------------------------------------*/
+} // getText
 
 =head2 writeText
 
-%TextOpts = (
-		"pt" => [$x, $y, $z],
-		"string" => $string,
-		"height" => $height,
-		"color" => $color,
-		);
-$d->writeText(\%TextOpts);
+  %TextOpts = (
+    "pt" => [$x, $y, $z],
+    "string" => $string,
+    "height" => $height,
+    "color" => $color,
+    );
+  $d->writeText(\%TextOpts);
 
 =cut
 
@@ -741,14 +779,40 @@ int writeText(SV* obj, SV* args) {
 
 	adHancpy(dwg->adenhd->entlayerobjhandle, dwg->current_layer);
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
-} // end writeText
+} // writeText
 
-/*-------------------------getPoint-----------------------------------*/
+=head2 getSolid
+
+=cut
+
+SV* getSolid(SV* obj) {
+	int i;
+	AV * pt;
+	char str[512];
+	PAD_BLOB_CTRL bcptr;
+	SV * acis;
+	HV * hash = newHV();
+	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
+	acis = newSVpv("", 0);
+	hv_store(hash, "acis", 4, acis, 0);
+	hv_store(hash, "pt", 2, newRV_noinc((SV*)pt = newAV()), 0);
+	for(i=0;i<3;i++) {
+		av_push(pt, newSVnv(dwg->aden->acisobj.pt0[i]));
+	}
+	bcptr=adStartBlobRead(dwg->aden->acisobj.ldblob);
+	while(adReadAcisString(bcptr, str)) {
+		//printf("read %s\n", str);
+		//printf("length is %d\n", strlen(str));
+		sv_catpvf(acis, "%s\n", str);
+	}
+	adEndBlobRead(bcptr);
+	return(newRV_noinc((SV*) hash));
+}
 
 =head2 getPoint
 
-$point = $d->getPoint();
-print "point:  ", join(",", @{$point->{pt}}), "\n";
+  $point = $d->getPoint();
+  print "point:  ", join(",", @{$point->{pt}}), "\n";
 
 =cut
 
@@ -762,16 +826,15 @@ SV* getPoint(SV* obj) {
 		av_push(pt, newSVnv(dwg->aden->point.pt0[i]));
 	}
 	return(newRV_noinc((SV*) hash));
-}
-/*--------------------------------------------------------------------*/
+} // getPoint
 
 =head2 writePoint
 
-%PointOpts = (
-		"pt" => [$x, $y, $z],
-		"color" => $color,
-		);
-$d->writePoint(\%PointOpts);
+  %PointOpts = (
+    "pt" => [$x, $y, $z],
+    "color" => $color,
+    );
+  $d->writePoint(\%PointOpts);
 
 =cut
 
@@ -820,73 +883,73 @@ int writePoint(SV* obj, SV* args) {
 
 	adHancpy(dwg->adenhd->entlayerobjhandle, dwg->current_layer);
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
-}
-
-
-/*--------------------------------------------------------------------*/
+} // writePoint
 
 =head2 getLWPline
 
-$pline = $d->getLWPline();
-print "points:\n\t", 
-	join("\n\t", 
-			map({join(",", @{$_})}
-				@{$pline->{pts}}
-			   )
-		), "\n";
-	$pline->{closed} && print "closed\n";
+  $pline = $d->getLWPline();
+  print "points:\n\t", 
+    join("\n\t", 
+        map({join(",", @{$_})}
+          @{$pline->{pts}}
+           )
+      ), "\n";
+  print $pline->{closed} ? "closed" : "open" , "\n";
 
 =cut
 
-	SV* getLWPline(SV* obj) {
-		PAD_BLOB_CTRL bcptr;
-		OdaLong il;
-		long num;
-		double tempdouble[2];
-		double tempbulge;
-		double tempwidth[2];
-		AV * pts;
-		AV * pt;
-		HV * hash = newHV();
-		DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
-		num = (long) dwg->aden->lwpline.numpoints;
-		bcptr = adStartBlobRead(dwg->aden->lwpline.ldblob);
-		hv_store(hash, "pts", 3, newRV_noinc((SV*)pts = newAV()), 0);
-		for(il=0;il < num; il++) {
-			adReadBlob2Double(bcptr, tempdouble);
-			if(dwg->aden->lwpline.flag & AD_LWPLINE_HAS_BULGES) {
-				adReadBlobDouble(bcptr, &tempbulge);
-			}
-			if (dwg->aden->lwpline.flag & AD_LWPLINE_HAS_WIDTHS) {
-				adReadBlob2Double(bcptr,tempwidth);
-			}
-			//printf("points: %3.2f,%3.2f\n", tempdouble[0], tempdouble[1]);
-			av_push(pts, newRV_noinc((SV*)pt = newAV()));
-			av_push(pt, newSVnv(tempdouble[0]));
-			av_push(pt, newSVnv(tempdouble[1]));
+SV* getLWPline(SV* obj) {
+	PAD_BLOB_CTRL bcptr;
+	OdaLong il;
+	long num;
+	double tempdouble[2];
+	double tempbulge;
+	double tempwidth[2];
+	AV * pts;
+	AV * pt;
+	HV * hash = newHV();
+	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
+	num = (long) dwg->aden->lwpline.numpoints;
+	bcptr = adStartBlobRead(dwg->aden->lwpline.ldblob);
+	hv_store(hash, "pts", 3, newRV_noinc((SV*)pts = newAV()), 0);
+	for(il=0;il < num; il++) {
+		adReadBlob2Double(bcptr, tempdouble);
+		if(dwg->aden->lwpline.flag & AD_LWPLINE_HAS_BULGES) {
+			adReadBlobDouble(bcptr, &tempbulge);
 		}
-		if(dwg->aden->lwpline.flag & AD_LWPLINE_IS_CLOSED) {
-			hv_store(hash, "closed", 6, newSViv(1), 0);
+		if (dwg->aden->lwpline.flag & AD_LWPLINE_HAS_WIDTHS) {
+			adReadBlob2Double(bcptr,tempwidth);
 		}
-		return(newRV_noinc((SV*) hash));
+		//printf("points: %3.2f,%3.2f\n", tempdouble[0], tempdouble[1]);
+		av_push(pts, newRV_noinc((SV*)pt = newAV()));
+		av_push(pt, newSVnv(tempdouble[0]));
+		av_push(pt, newSVnv(tempdouble[1]));
 	}
-/*--------------------------------------------------------------------*/
+	if(dwg->aden->lwpline.flag & AD_LWPLINE_IS_CLOSED) {
+		hv_store(hash, "closed", 6, newSViv(1), 0);
+	}
+	else {
+		hv_store(hash, "closed", 6, newSViv(0), 0);
+	}
+
+	return(newRV_noinc((SV*) hash));
+} // getLWPline
 
 =head2 writeLWPline
 
-@pts = (
-		[0,1],
-		[5,-2.25],
-		[7,9],
-		[4,6],
-		[-2,7.375],
-	   );
-%PlineOpts = (
-		"pts" => \@pts,
-		"closed" => 1,
-		"color" => 255,
-		);
-$d->writeLWPline(\%PlineOpts);
+  @pts = (
+    [0,1],
+    [5,-2.25],
+    [7,9],
+    [4,6],
+    [-2,7.375],
+     );
+  %PlineOpts = (
+    "pts" => \@pts,
+    "closed" => 1,
+    "color" => 255,
+    );
+  $d->writeLWPline(\%PlineOpts);
 
 =cut
 
@@ -942,6 +1005,7 @@ int writeLWPline(SV* obj, SV* args) {
 		psv = hv_fetch(hash, "closed", 6, 0);
 		val = *psv;
 		if(sv_true(val)) {
+			//printf("closing in output (%d)\n", SvIV(val));
 			dwg->aden->lwpline.flag |= AD_LWPLINE_IS_CLOSED;
 		}
 	}
@@ -965,10 +1029,14 @@ int writeLWPline(SV* obj, SV* args) {
 	}
 	adHancpy(dwg->adenhd->entlayerobjhandle, dwg->current_layer);
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
-} 
+} // writeLWPline 
 
+=head2 getImage
 
-/*--------------------------------------------------------------------*/	
+Reads an image from the current entity.
+
+=cut
+
 SV* getImage(SV* obj) {
 	PAD_BLOB_CTRL bcptr;
 	int i;
@@ -1026,13 +1094,14 @@ SV* getImage(SV* obj) {
 	len = strlen(adob.imagedef.filepath);
 	hv_store(hash, "fullpath", 8, newSVpvn(adob.imagedef.filepath, len), 0);
 	return(newRV_noinc((SV*) hash));
-}
+} // getImage
 
 =head1 Entity List handling
 
-=cut
+Entities are read and written from a list, which must be initialized on
+both read and write operations.
 
-////////////////////////////////////////////////////////////////////////
+=cut
 
 =head2 getentinit
 
@@ -1054,7 +1123,7 @@ int getentinit(SV* obj) {
 =head2 getent
 
 Returns the next entity.  This is paired with getentinit() and the two
-act as a pair much like Perl's open() and $line = <FILEHANDLE> setup.
+act as a pair much like the Perl open() and $line = <FILEHANDLE> setup.
 
 =cut
 
@@ -1077,18 +1146,19 @@ void getent(SV* obj) {
 	Inline_Stack_Push(sv_2mortal(newSViv(adenhd->enttype)));
 	Inline_Stack_Done;
 }
-/*--------------------------------------------------------------------*/
 
 =head1 Utilities
 
 =cut
 
-/*--------------------------------------------------------------------*/
-
 =head2 get_extrusion
 
 Returns the extrusion vector of the current entity as an array
-reference.
+reference.  Returns undef if extrusion is not set.
+
+  if(my $extrusion = $dwg->get_extrusion()) {
+    print "extrusion is @$extrusion\n";
+  }
 
 =cut
 
@@ -1110,7 +1180,7 @@ SV* get_extrusion(SV* obj) {
 
 Sets the extrusion direction of the current entity.  Not intended to be
 used from Perl (each write<entity> function calls this itself if the
-value of $optsextrusion is set.)
+value of $opts{extrusion} is set.)
 
 =cut
 
@@ -1166,6 +1236,12 @@ char* entype(SV* obj, int type) {
 			return("texts");
 		case AD_ENT_ARC:
 			return("arcs");
+		case AD_ENT_SOLID3D:
+			return("solid3d"); // XXX stupid kludge
+		case AD_ENT_REGION:
+			return("region3d");
+		case AD_ENT_BODY:
+			return("body3d");
 		default:
 			if(type == adImageEnttype(dwg->handle)) 
 				return("images");
@@ -1182,6 +1258,13 @@ char* entype(SV* obj, int type) {
 This function is called under the hood by perl when variables created by
 new() go out of scope.  You should never call this from your code, but
 you can undef() your object and it will get called.
+
+Note that you may in fact need to undef($dwg) to kill your object before
+trying to use another one.  The toolkit doesn't like to be opened and
+closed while objects are in-use, and each object has no way of knowing
+whether or not there are other objects in-use.  Since I don't feel like
+leaking memory with a BEGIN and END setup, you'll just have to live with
+this (or make a suggestion for a better setup.)
 
 =cut
 
@@ -1201,7 +1284,7 @@ void DESTROY(SV* obj) {
 	adCloseAd2();
 	// printf("freeing struct\n");
 	free(dwg);
-	}
+} // DESTROY
 
 /*--------------------------------------------------------------------*/
 // this function was adapted from the OpenDWG toolkit example
@@ -1214,12 +1297,12 @@ int allocateadptrs(DWGstruct* dwg) {
 				if ((dwg->adxd=(PAD_XD)malloc(sizeof(AD_XD)))!=NULL) {
 					//printf("success\n");
 					return(1);
-					}
-				free(dwg->adtb);
 				}
-			free(dwg->aden);
+				free(dwg->adtb);
 			}
-		free(dwg->adenhd);
+			free(dwg->aden);
 		}
-	return(0);
+		free(dwg->adenhd);
 	}
+	return(0);
+}

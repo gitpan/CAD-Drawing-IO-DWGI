@@ -3,8 +3,6 @@
 
 #########################
 
-# change 'tests => 1' to 'tests => last_test_to_print';
-
 use Test::More;
 my @actions = qw(
 	loadfile

@@ -5,7 +5,8 @@ install it under /usr/local/lib/ and /usr/local/include/.
 There is also the sore spot of the adinit.dat file, which the toolkit
 has to have each time it starts.  The Makefile.PL will search your /usr/
 and /home/ directories for this and set the value as a constant in the
-functions.c file.
+functions.c file.  Alternatively, you can explicitely specify an
+initfile with the --adinit flag.
 
 If you don't have something of a similar setup, hack on the Makefile.PL
 and the "use Inline" portion of DWGI.pm.  Better yet, find a way for all
@@ -18,7 +19,7 @@ and how you are using it.)
 
 So, if you have everything setup, just do:
 
-perl Makefile.PL
+perl Makefile.PL [--help], [--adinit <initfile>]
 make
 make test
 make install
