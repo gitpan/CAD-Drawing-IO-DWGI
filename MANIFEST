@@ -1,0 +1,9 @@
+Changes
+INSTALL
+DWGI.pm
+DWGI.pod
+DWGI/functions.c
+Makefile.PL
+MANIFEST
+README
+test.pl
