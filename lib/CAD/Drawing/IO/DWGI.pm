@@ -1,3 +1,36 @@
+package CAD::Drawing::IO::DWGI;
+our $VERSION = '0.12';
+
+use 5.006;
+use strict;
+use warnings;
+
+BEGIN {
+	my $dir = __FILE__;
+	$dir =~ s#.pm$#/#;
+	our $functions = $dir . "functions.c";
+	# print "functions at begin: $functions\n";
+}
+
+use Inline (
+		C => Config => 
+		INC => '-I/usr/local/include',
+		MYEXTLIB => '/usr/local/lib/ad2.a /usr/local/lib/ad2pic.a',
+		NAME => "CAD::Drawing::IO::DWGI",
+		#FILTERS => 'Strip_POD',
+		VERSION => '0.12',
+		# CLEAN_AFTER_BUILD => 0,
+#        FORCE_BUILD => 1,
+		# NOTE:  you can just call this with -MInline=NOISY,NOCLEAN,etc
+		);
+our $functions;
+use Inline C => $functions;
+
+# NOTE: this file contains little or no Perl code, the entire module is
+# implemented using the Inline.pm module and all C code is contained in
+# the file functions.c (the contents of which are distributed under the
+# __DATA__ section below.)
+
 =pod
 
 =head1 NAME
@@ -18,12 +51,13 @@ Just
 =head1 AUTHOR
 
   Eric L. Wilhelm
-  ewilhelm AT sbcglobal DOT net
-  http://pages.sbcglobal.net/mycroft
+  ewilhelm at cpan dot org
+  http://scratchcomputing.com
 
 =head1 COPYRIGHT
 
-This module is copyright 2003 by Eric L. Wilhelm and A. Zahner Co.  
+This module is Copyright (C) 2003-2006 by Eric L. Wilhelm.  Portions
+Copyright (C) 2003 Eric L. Wilhelm and A. Zahner Co.  
 
 This is module is free software as described under the terms below.
 Permission to use, modify and distribute this module shall be governed
@@ -78,14 +112,11 @@ The dxf file accuracy is set internally at 14 digits after the decimal
 place.  Providing an interface to set this would take a bit of coding
 in C, so you are more than welcome to submit a patch.
 
-=head1 Changes
-
-  0.08 First public release
-  0.09 Fixed error reading image size
-  0.10 Added Ellipse read
-
+=cut
 
 =head1 Constructor
+
+=cut
 
 =head2 new
 
@@ -102,11 +133,17 @@ Loads a file from disk into the toolkit data structure.
 
   $d->loadfile("filename.dxf|dwg");
 
+=head2 closefile
+
+undocumented
+
 =head2 newfile
 
 Creates an empty data structure and initializes some default values.
 
   $d->newfile($version);
+
+=cut
 
 =head2 savefile
 
@@ -114,13 +151,19 @@ Writes the data to disk.
 
   $d->savefile($name, $type);
 
+=cut
+
 =head1 Layer Actions
+
+=cut
 
 =head2 listlayers
 
 Returns a list of layers in the loaded object.
 
   @layers = $d->listlayers();
+
+=cut
 
 =head2 writeLayer
 
@@ -135,6 +178,8 @@ newfile() starts with layer "0" as the default.
 
 Currently, the only parameter supported is the name and color.
 
+=cut
+
 =head2 setLayer
 
 Set layer as the default.  Layer must have been previously created with
@@ -142,9 +187,14 @@ writeLayer().
 
   $dwg->setLayer($name) or die "layer not in drawing yet";
 
+=cut
+
 =head1 Typed Entity Functions
 
 NOTE that all getThing methods must be part of a getent() loop.
+
+=cut
+
 
 =head2 getCircle
 
@@ -154,11 +204,15 @@ Reads a circle from the current entity.
   print "point:  ", join(",", @{$circle->{pt}}), "\n";
   print "rad:    $circle->{rad}\n";
 
+=cut
+
 =head2 writeCircle
 
 Writes a circle to the object structure.
 
   $d->writeCircle({"pt"=>[$x,$y,$z], "rad"=>$rad, "color"=>$color});
+
+=cut
 
 =head2 getEllipse
 
@@ -176,6 +230,9 @@ functions in the toolkit, which seem to only reduce the arc-angles.
 NOTE that the angles given are relative to the baseline described by the
 vector stored in $el->{off}.
 
+=cut
+
+
 =head2 getArc
 
 Reads an arc from the current entity.
@@ -184,6 +241,8 @@ Reads an arc from the current entity.
   print "point:  ", join(",", @{$arc->{pt}}), "\n";
   print "rad:    $arc->{rad}\n";
   print "radian angles: ", join(",", @{$arc->{angs}}), "\n";
+
+=cut
 
 =head2 writeArc
 
@@ -197,6 +256,8 @@ Writes an arc to the object structure.
     );
   $d->writeArc(\%ArcOpts);
 
+=cut
+
 =head2 getLine
 
 Reads a line from the current entity.
@@ -209,6 +270,9 @@ Reads a line from the current entity.
       )
     ), "\n";
 
+=cut
+
+
 =head2 writeLine
 
 Writes a line to the object structure.
@@ -219,12 +283,16 @@ Writes a line to the object structure.
     );
   $d->writeLine(\%LineOpts);
 
+=cut
+
 =head2 getText
 
   $text = $d->getText();
   print "point:  ", join(",", @{$text->{pt}}), "\n";
   print "string: ", $text->{string}, "\n";
   print "height: ", $text->{height}, "\n";
+
+=cut
 
 =head2 writeText
 
@@ -236,12 +304,20 @@ Writes a line to the object structure.
     );
   $d->writeText(\%TextOpts);
 
+=cut
+
 =head2 getSolid
+
+experimental
+
+=cut
 
 =head2 getPoint
 
   $point = $d->getPoint();
   print "point:  ", join(",", @{$point->{pt}}), "\n";
+
+=cut
 
 =head2 writePoint
 
@@ -250,6 +326,8 @@ Writes a line to the object structure.
     "color" => $color,
     );
   $d->writePoint(\%PointOpts);
+
+=cut
 
 =head2 getLWPline
 
@@ -261,6 +339,8 @@ Writes a line to the object structure.
            )
       ), "\n";
   print $pline->{closed} ? "closed" : "open" , "\n";
+
+=cut
 
 =head2 writeLWPline
 
@@ -278,26 +358,38 @@ Writes a line to the object structure.
     );
   $d->writeLWPline(\%PlineOpts);
 
+=cut
+
 =head2 getImage
 
 Reads an image from the current entity.
+
+=cut
 
 =head1 Entity List handling
 
 Entities are read and written from a list, which must be initialized on
 both read and write operations.
 
+=cut
+
 =head2 getentinit
 
 Initializes the entity list.  Call this before adding anything to a
 newfile() or before calling getent() after loadfile()
+
+=cut
 
 =head2 getent
 
 Returns the next entity.  This is paired with getentinit() and the two
 act as a pair much like the Perl open() and $line = <FILEHANDLE> setup.
 
+=cut
+
 =head1 Utilities
+
+=cut
 
 =head2 get_extrusion
 
@@ -308,11 +400,15 @@ reference.  Returns undef if extrusion is not set.
     print "extrusion is @$extrusion\n";
   }
 
+=cut
+
 =head2 set_extrusion
 
 Sets the extrusion direction of the current entity.  Not intended to be
 used from Perl (each write<entity> function calls this itself if the
 value of $opts{extrusion} is set.)
+
+=cut
 
 =head2 entype
 
@@ -322,6 +418,8 @@ Return a text string for the entity type code.
   if($type eq "plines") {
     $pline = $d->getLWPline();
     }
+
+=cut
 
 =head2 DESTROY
 
@@ -336,4 +434,22 @@ whether or not there are other objects in-use.  Since I don't feel like
 leaking memory with a BEGIN and END setup, you'll just have to live with
 this (or make a suggestion for a better setup.)
 
+=cut
 
+=begin shutup_pod_coverage
+
+Cool, huh?
+
+=head2 dl_load_flags
+
+What's that?
+
+=head2 hello
+
+I did do this one.  Maybe I should test it.
+
+=end shutup_pod_coverage
+
+=cut
+
+1;

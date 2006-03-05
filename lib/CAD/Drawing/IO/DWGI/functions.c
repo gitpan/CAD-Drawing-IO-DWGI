@@ -1,9 +1,9 @@
 // functions.c 
 
 // This file is part of the CAD::Drawing::IO::DWGI package Copyright
-// 2003 Eric Wilhelm and A. Zahner Co.  This Perl module is free
-// software, made available AS-IS and distributed under the same terms
-// as Perl.  See the main module file (DWGI.pm) for details.
+// 2003-2006 Eric Wilhelm.  This Perl module is free software, made
+// available AS-IS and distributed under the same terms as Perl.  See
+// the main module file (DWGI.pm) for details.
 //
 // This is a set of functions which wrap the OpenDWG toolkit so that it
 // can be called from Perl programs.  There is no connection between the
@@ -16,9 +16,9 @@
 //
 // See http://www.opendwg.org for details.
 //
-// While the Author and his employer are Associate members of the
-// OpenDWG consortium for purposes of using the OpenDWG libraries, this
-// is the full extent of their relationship.
+// While the Author is an Associate members of the OpenDWG consortium
+// for purposes of using the OpenDWG libraries, this is the full extent
+// of the relationship.
 //
 // By using this software, you agree to not hold any party liable for
 // anything which your use of this software causes to happen to you,
@@ -51,7 +51,7 @@ typedef struct {
 	short        version;
 } DWGstruct;
 
-const char initfilepath[]="/usr/local/zahner/openDWG/adinit/adinit.dat";
+const char initfilepath[]="/usr/local/stow/openDWG/adinit/adinit.dat";
 short initerror;
 
 short criterrhandler(short num);
@@ -60,19 +60,6 @@ int allocateadptrs(DWGstruct* dwg);
 void hello() {
 	printf("hello world\n");
 	}
-
-=head1 Constructor
-
-=cut
-
-=head2 new
-
-Creates a new blessed reference which gives access to the following
-object methods.
-
-  $d = CAD::Drawing::IO::DWGI->new();
-
-=cut
 
 SV*	new (char* class) {
 	DWGstruct* dwg = malloc(sizeof(DWGstruct));
@@ -91,21 +78,6 @@ SV*	new (char* class) {
 	return(obj_ref);
 	};
 
-=head1 File Actions
-
-=cut
-
-// note that we can have inlined POD as long as everything has a blank
-// line after it.  This is slightly off of the std Perl syntax, but okay
-// anyway that is what we get.
-
-=head2 loadfile
-
-Loads a file from disk into the toolkit data structure.
-
-  $d->loadfile("filename.dxf|dwg");
-
-=cut
 
 int loadfile(SV* obj, char* infile) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
@@ -130,14 +102,6 @@ int closefile(SV* obj) {
 	}
 } // closefile
 
-=head2 newfile
-
-Creates an empty data structure and initializes some default values.
-
-  $d->newfile($version);
-
-=cut
-
 int newfile(SV* obj, short version) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
 	AD_LTYPE templtp;
@@ -152,14 +116,6 @@ int newfile(SV* obj, short version) {
 	dwg->version = version;
 	dwg->file_is_open = 1;
 } // newfile
-
-=head2 savefile
-
-Writes the data to disk.
-
-  $d->savefile($name, $type);
-
-=cut
 
 short savefile(SV* obj, char* filename, short filetype) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
@@ -178,19 +134,7 @@ short savefile(SV* obj, char* filename, short filetype) {
 					dxfnegz, dxfdecprec, dxfwritezeroes, r12dxfvbls);
 } // savefile
 
-=head1 Layer Actions
-
-=cut
-
 /*-------------------------listlayers---------------------------------*/
-
-=head2 listlayers
-
-Returns a list of layers in the loaded object.
-
-  @layers = $d->listlayers();
-
-=cut
 
 void listlayers(SV* obj) {
 	Inline_Stack_Vars;
@@ -215,21 +159,6 @@ void listlayers(SV* obj) {
 	Inline_Stack_Done;		
 	}
 /*--------------------------------------------------------------------*/
-
-=head2 writeLayer
-
-Add a new layer to the database and set it as the current layer.  A
-newfile() starts with layer "0" as the default.
-
-  %layer_opt = (
-    name => $name,  # limit of 255 characters?
-    color => 9,     # must be 0-256
-    );
-  $dwg->writeLayer(\%layer_opt)
-
-Currently, the only parameter supported is the name and color.
-
-=cut
 
 int writeLayer(SV* obj, SV* args) {
 	short color;
@@ -273,38 +202,12 @@ int writeLayer(SV* obj, SV* args) {
 	adAddLayer(dwg->handle,&dwg->adtb->lay);
 } // writeLayer
 
-=head2 setLayer
-
-Set layer as the default.  Layer must have been previously created with
-writeLayer().
-
-  $dwg->setLayer($name) or die "layer not in drawing yet";
-
-=cut
-
 int setLayer(SV * obj, char * name) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
 	if(adFindLayerByName(dwg->handle, name, dwg->current_layer));
 		return(1);
 	return(0);
 	}
-
-=head1 Typed Entity Functions
-
-NOTE that all getThing methods must be part of a getent() loop.
-
-=cut
-
-
-=head2 getCircle
-
-Reads a circle from the current entity.  
-
-  $circle = $d->getCircle();
-  print "point:  ", join(",", @{$circle->{pt}}), "\n";
-  print "rad:    $circle->{rad}\n";
-
-=cut
 
 SV* getCircle(SV* obj) {
 	AV * pt;
@@ -318,14 +221,6 @@ SV* getCircle(SV* obj) {
 	hv_store(hash, "rad", 3, newSVnv(dwg->aden->circle.radius), 0);
 	return(newRV_noinc((SV*) hash));
 }
-
-=head2 writeCircle
-
-Writes a circle to the object structure.
-
-  $d->writeCircle({"pt"=>[$x,$y,$z], "rad"=>$rad, "color"=>$color});
-
-=cut
 
 int writeCircle(SV* obj, SV* args) {
 	HV* hash;
@@ -370,8 +265,8 @@ int writeCircle(SV* obj, SV* args) {
 		//printf("deref\n");
 		val = *psv;
 		//printf("setting\n");
-		if(!SvNOK(val))
-			croak("not a double");
+/*        if(! (SvNOK(val) || SvIOK(val)))*/
+/*            croak("not a number");*/
 		dwg->aden->circle.radius = SvNV(val);
 		//printf("set radius to %3.2f\n", dwg->aden->circle.radius);
 	}
@@ -397,24 +292,6 @@ int writeCircle(SV* obj, SV* args) {
 	//printf("copy ok\n");
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
 } // writeCircle
-
-=head2 getEllipse
-
-Reads an ellipse from the current entity.
-
-  $el = $d->getEllipse();
-  print "center:  ", join(",", @{$el->{pt}}), "\n";
-  print "offset:  ", join(",", @{$el->{off}}), "\n";
-  print "minor / major ratio:   $el->{ratio}\n";
-  print "start / end:  ", join(",", @{$el->{angs}}), "\n";
-
-There is (as usual) some discrepency between the odwg docs and the adesk
-dxf ref as to wtf this parameter thing is.  There are some undocumented
-functions in the toolkit, which seem to only reduce the arc-angles.
-NOTE that the angles given are relative to the baseline described by the
-vector stored in $el->{off}.
-
-=cut
 
 SV* getEllipse(SV* obj) {
 	AV * pt;
@@ -448,17 +325,6 @@ SV* getEllipse(SV* obj) {
 	return(newRV_noinc((SV*) hash));
 } // getEllipse
 
-=head2 getArc
-
-Reads an arc from the current entity.
-
-  $arc = $d->getArc();
-  print "point:  ", join(",", @{$arc->{pt}}), "\n";
-  print "rad:    $arc->{rad}\n";
-  print "radian angles: ", join(",", @{$arc->{angs}}), "\n";
-
-=cut
-
 SV* getArc(SV* obj) {
 	AV * pt;
 	AV * angs;
@@ -474,20 +340,6 @@ SV* getArc(SV* obj) {
 	av_push(angs, newSVnv(dwg->aden->arc.endang));
 	return(newRV_noinc((SV*) hash));
 } // getArc
-
-=head2 writeArc
-
-Writes an arc to the object structure.
-
-  %ArcOpts = (
-    "pt" => [$x,$y,$z],
-    "rad" => $rad,
-    "angs" => [$start, $end],
-    "color" => $color,
-    );
-  $d->writeArc(\%ArcOpts);
-
-=cut
 
 int writeArc(SV* obj, SV* args) {
 	HV* hash;
@@ -524,8 +376,8 @@ int writeArc(SV* obj, SV* args) {
 	if(hv_exists(hash, "rad", 3)) {
 		psv = hv_fetch(hash, "rad", 3,0);
 		val = *psv;
-		if(!SvNOK(val))
-			croak("not a double");
+/*        if(! (SvNOK(val) || SvIOK(val)))*/
+/*            croak("not a number");*/
 		dwg->aden->arc.radius = SvNV(val);
 	}
 	else {
@@ -565,20 +417,6 @@ int writeArc(SV* obj, SV* args) {
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
 } // writeArc
 
-=head2 getLine
-
-Reads a line from the current entity.
-
-  $line = $d->getLine();
-  print "endpoints:  ",
-    join("\n", 
-      map({join(",", @{$_})}
-        @{$line->{pts}}
-      )
-    ), "\n";
-
-=cut
-
 SV* getLine(SV* obj) {
 	int i;
 	AV * pts;
@@ -597,18 +435,6 @@ SV* getLine(SV* obj) {
 	}
 	return(newRV_noinc((SV*) hash));
 } // getLine
-
-=head2 writeLine
-
-Writes a line to the object structure.
-
-  %LineOpts = (
-    "pts" => [ [$x1,$y1,$z1], [$x2,$y2,$z2] ],
-    "color" => $color,
-    );
-  $d->writeLine(\%LineOpts);
-
-=cut
 
 int writeLine(SV* obj, SV* args) {
 	HV* hash;
@@ -677,15 +503,6 @@ int writeLine(SV* obj, SV* args) {
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
 } // writeLine
 
-=head2 getText
-
-  $text = $d->getText();
-  print "point:  ", join(",", @{$text->{pt}}), "\n";
-  print "string: ", $text->{string}, "\n";
-  print "height: ", $text->{height}, "\n";
-
-=cut
-
 SV* getText(SV* obj) {
 	int i;
 	long len;
@@ -700,20 +517,12 @@ SV* getText(SV* obj) {
 	hv_store(hash, "string", 6, newSVpvn(dwg->aden->text.textstr, len), 0);
 	// now for the long-awaited text height!
 	hv_store(hash, "height", 6, newSVnv(dwg->aden->text.tdata.height), 0);
+	if(dwg->aden->text.tdata.rotang) {
+		// the text is rotated
+		hv_store(hash, "angle", 5, newSVnv(dwg->aden->text.tdata.rotang), 0);
+	}
 	return(newRV_noinc((SV*) hash));
 } // getText
-
-=head2 writeText
-
-  %TextOpts = (
-    "pt" => [$x, $y, $z],
-    "string" => $string,
-    "height" => $height,
-    "color" => $color,
-    );
-  $d->writeText(\%TextOpts);
-
-=cut
 
 int writeText(SV* obj, SV* args) {
 	HV* hash;
@@ -781,20 +590,22 @@ int writeText(SV* obj, SV* args) {
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
 } // writeText
 
-=head2 getSolid
-
-=cut
-
 SV* getSolid(SV* obj) {
 	int i;
 	AV * pt;
 	char str[512];
+	char ch;
+	long blb_size;
 	PAD_BLOB_CTRL bcptr;
+	PAD_BLOB_CTRL bcptr2;
 	SV * acis;
+	SV * img;
 	HV * hash = newHV();
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
 	acis = newSVpv("", 0);
+	img = newSVpv("", 0);
 	hv_store(hash, "acis", 4, acis, 0);
+	hv_store(hash, "img", 3, img, 0);
 	hv_store(hash, "pt", 2, newRV_noinc((SV*)pt = newAV()), 0);
 	for(i=0;i<3;i++) {
 		av_push(pt, newSVnv(dwg->aden->acisobj.pt0[i]));
@@ -806,15 +617,14 @@ SV* getSolid(SV* obj) {
 		sv_catpvf(acis, "%s\n", str);
 	}
 	adEndBlobRead(bcptr);
+	bcptr2=adStartBlobRead(dwg->aden->acisobj.imgdata);
+	printf("blob is %d bytes long\n", adBlobSize(bcptr2));
+	while(adReadBlobByte(bcptr2, &ch)) {
+		sv_catpvn(img, &ch, 1);
+	}
+	adEndBlobRead(bcptr2);
 	return(newRV_noinc((SV*) hash));
 }
-
-=head2 getPoint
-
-  $point = $d->getPoint();
-  print "point:  ", join(",", @{$point->{pt}}), "\n";
-
-=cut
 
 SV* getPoint(SV* obj) {
 	int i;
@@ -827,16 +637,6 @@ SV* getPoint(SV* obj) {
 	}
 	return(newRV_noinc((SV*) hash));
 } // getPoint
-
-=head2 writePoint
-
-  %PointOpts = (
-    "pt" => [$x, $y, $z],
-    "color" => $color,
-    );
-  $d->writePoint(\%PointOpts);
-
-=cut
 
 int writePoint(SV* obj, SV* args) {
 	HV* hash;
@@ -885,19 +685,6 @@ int writePoint(SV* obj, SV* args) {
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
 } // writePoint
 
-=head2 getLWPline
-
-  $pline = $d->getLWPline();
-  print "points:\n\t", 
-    join("\n\t", 
-        map({join(",", @{$_})}
-          @{$pline->{pts}}
-           )
-      ), "\n";
-  print $pline->{closed} ? "closed" : "open" , "\n";
-
-=cut
-
 SV* getLWPline(SV* obj) {
 	PAD_BLOB_CTRL bcptr;
 	OdaLong il;
@@ -916,11 +703,13 @@ SV* getLWPline(SV* obj) {
 		adReadBlob2Double(bcptr, tempdouble);
 		if(dwg->aden->lwpline.flag & AD_LWPLINE_HAS_BULGES) {
 			adReadBlobDouble(bcptr, &tempbulge);
+			// XXX do something with this!
+			// printf("bulge! %0.6f\n", tempbulge);
 		}
 		if (dwg->aden->lwpline.flag & AD_LWPLINE_HAS_WIDTHS) {
 			adReadBlob2Double(bcptr,tempwidth);
 		}
-		//printf("points: %3.2f,%3.2f\n", tempdouble[0], tempdouble[1]);
+		// printf("points: %3.2f,%3.2f\n", tempdouble[0], tempdouble[1]);
 		av_push(pts, newRV_noinc((SV*)pt = newAV()));
 		av_push(pt, newSVnv(tempdouble[0]));
 		av_push(pt, newSVnv(tempdouble[1]));
@@ -934,24 +723,6 @@ SV* getLWPline(SV* obj) {
 
 	return(newRV_noinc((SV*) hash));
 } // getLWPline
-
-=head2 writeLWPline
-
-  @pts = (
-    [0,1],
-    [5,-2.25],
-    [7,9],
-    [4,6],
-    [-2,7.375],
-     );
-  %PlineOpts = (
-    "pts" => \@pts,
-    "closed" => 1,
-    "color" => 255,
-    );
-  $d->writeLWPline(\%PlineOpts);
-
-=cut
 
 int writeLWPline(SV* obj, SV* args) {
 	HV* hash;
@@ -1031,12 +802,6 @@ int writeLWPline(SV* obj, SV* args) {
 	adAddEntityToList( dwg->handle, dwg->entitylist, dwg->adenhd, dwg->aden);
 } // writeLWPline 
 
-=head2 getImage
-
-Reads an image from the current entity.
-
-=cut
-
 SV* getImage(SV* obj) {
 	PAD_BLOB_CTRL bcptr;
 	int i;
@@ -1096,20 +861,6 @@ SV* getImage(SV* obj) {
 	return(newRV_noinc((SV*) hash));
 } // getImage
 
-=head1 Entity List handling
-
-Entities are read and written from a list, which must be initialized on
-both read and write operations.
-
-=cut
-
-=head2 getentinit
-
-Initializes the entity list.  Call this before adding anything to a
-newfile() or before calling getent() after loadfile()
-
-=cut
-
 int getentinit(SV* obj) {
 	AD_OBJHANDLE mspaceblkobjhandle;
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
@@ -1119,13 +870,6 @@ int getentinit(SV* obj) {
 	dwg->entitylist = adEntityList(dwg->handle, mspaceblkobjhandle);
 	adStartEntityGet(dwg->entitylist); // rewinds the entitylist
 	}
-
-=head2 getent
-
-Returns the next entity.  This is paired with getentinit() and the two
-act as a pair much like the Perl open() and $line = <FILEHANDLE> setup.
-
-=cut
 
 void getent(SV* obj) {
 	Inline_Stack_Vars;
@@ -1147,21 +891,6 @@ void getent(SV* obj) {
 	Inline_Stack_Done;
 }
 
-=head1 Utilities
-
-=cut
-
-=head2 get_extrusion
-
-Returns the extrusion vector of the current entity as an array
-reference.  Returns undef if extrusion is not set.
-
-  if(my $extrusion = $dwg->get_extrusion()) {
-    print "extrusion is @$extrusion\n";
-  }
-
-=cut
-
 SV* get_extrusion(SV* obj) {
 	int i;
 	AV* ext = newAV();
@@ -1175,14 +904,6 @@ SV* get_extrusion(SV* obj) {
 	return(newRV_noinc((SV*) ext));
 }
 /*--------------------------------------------------------------------*/
-
-=head2 set_extrusion
-
-Sets the extrusion direction of the current entity.  Not intended to be
-used from Perl (each write<entity> function calls this itself if the
-value of $opts{extrusion} is set.)
-
-=cut
 
 int set_extrusion(DWGstruct* dwg, HV* hash) {
 	SV** psv;
@@ -1212,17 +933,6 @@ int set_extrusion(DWGstruct* dwg, HV* hash) {
 
 /*-------------------------Constants Lookup---------------------------*/
 
-=head2 entype
-
-Return a text string for the entity type code.
-
-  $type = $d->entype($type);
-  if($type eq "plines") {
-    $pline = $d->getLWPline();
-    }
-
-=cut
-
 char* entype(SV* obj, int type) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
 	switch (type) {
@@ -1242,6 +952,14 @@ char* entype(SV* obj, int type) {
 			return("region3d");
 		case AD_ENT_BODY:
 			return("body3d");
+		case AD_ENT_POLYLINE:
+			return("polyline");
+		case AD_ENT_VERTEX:
+			return("vertex");
+		case AD_ENT_SEQEND:
+			return("sequence_end");
+		case AD_ENT_FACE3D:
+			return("face3d");
 		default:
 			if(type == adImageEnttype(dwg->handle)) 
 				return("images");
@@ -1252,21 +970,6 @@ char* entype(SV* obj, int type) {
 	}
 
 /*-------------------------DESTRUCTOR---------------------------------*/
-
-=head2 DESTROY
-
-This function is called under the hood by perl when variables created by
-new() go out of scope.  You should never call this from your code, but
-you can undef() your object and it will get called.
-
-Note that you may in fact need to undef($dwg) to kill your object before
-trying to use another one.  The toolkit doesn't like to be opened and
-closed while objects are in-use, and each object has no way of knowing
-whether or not there are other objects in-use.  Since I don't feel like
-leaking memory with a BEGIN and END setup, you'll just have to live with
-this (or make a suggestion for a better setup.)
-
-=cut
 
 void DESTROY(SV* obj) {
 	DWGstruct* dwg = (DWGstruct*) SvIV(SvRV(obj));
